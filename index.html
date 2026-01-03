@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Lessons & Gratitude Journal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #ffffff;
+            --accent-color: #4a90e2;
+            --danger-color: #e74c3c;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--secondary-color);
+        }
+
+        .date-navigation {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #111;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-btn {
+            background-color: #222;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: #333;
+        }
+
+        .current-date {
+            font-size: 1.3rem;
+            font-weight: 600;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .calendar-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 5px;
+        }
+
+        .calendar-picker {
+            position: absolute;
+            background-color: #111;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 100;
+            margin-top: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .calendar-picker.hidden {
+            display: none;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-day {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            background-color: #333;
+        }
+
+        .calendar-day.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .pdf-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .pdf-btn {
+            background-color: #222;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .pdf-btn:hover {
+            background-color: #333;
+        }
+
+        .day-screen {
+            background-color: #111;
+            border-radius: 10px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            min-height: 400px;
+        }
+
+        .day-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--accent-color);
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .notes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .add-note-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            align-self: flex-start;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .add-note-btn:hover {
+            background-color: #3a7bc8;
+        }
+
+        .note {
+            background-color: #1a1a1a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .note-text {
+            width: 100%;
+            background: transparent;
+            color: var(--secondary-color);
+            border: none;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            min-height: 100px;
+            max-height: 500px;
+            padding: 10px;
+            outline: none;
+            overflow-y: auto;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #ff6b6b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #888;
+            font-style: italic;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .date-navigation {
+                order: 2;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .pdf-controls {
+                justify-content: center;
+            }
+            
+            .day-screen {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Daily Lessons & Gratitude Journal</h1>
+            <div class="date-navigation">
+                <button class="nav-btn prev-btn" title="Previous Day">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="current-date">04/01/2026</div>
+                
+                <button class="nav-btn next-btn" title="Next Day">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                
+                <button class="calendar-btn" id="calendarToggle" title="Open Calendar">
+                    <i class="fas fa-calendar-alt"></i>
+                </button>
+                
+                <div class="calendar-picker hidden" id="calendarPicker">
+                    <div class="calendar-header">
+                        <button class="nav-btn" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                        <h3 id="currentMonth">January 2026</h3>
+                        <button class="nav-btn" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid" id="calendarDays">
+                        <!-- Calendar days will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="pdf-controls">
+            <button class="pdf-btn" id="pdfDay">Export Day PDF</button>
+            <button class="pdf-btn" id="pdfWeek">Export Week PDF</button>
+            <button class="pdf-btn" id="pdfMonth">Export Month PDF</button>
+        </div>
+        
+        <main>
+            <div class="day-screen">
+                <h2 class="day-title">Lessons Learnt Today / Gratitude Words</h2>
+                
+                <div class="notes-container" id="notesContainer">
+                    <!-- Notes will be added here -->
+                    <div class="empty-state" id="emptyState">
+                        No notes yet. Click "Add Note" to start writing.
+                    </div>
+                </div>
+                
+                <button class="add-note-btn" id="addNoteBtn">
+                    <i class="fas fa-plus"></i> Add Note
+                </button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Your journal is saved automatically in your browser. Data remains on this device.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Application state
+        let currentDate = new Date(2026, 0, 4); // January 4, 2026
+        let calendarMonth = new Date(currentDate);
+        let notes = {};
+        
+        // DOM Elements
+        const currentDateElement = document.querySelector('.current-date');
+        const notesContainer = document.getElementById('notesContainer');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const emptyState = document.getElementById('emptyState');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        const calendarToggle = document.getElementById('calendarToggle');
+        const calendarPicker = document.getElementById('calendarPicker');
+        const calendarDays = document.getElementById('calendarDays');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const currentMonthElement = document.getElementById('currentMonth');
+        const pdfDayBtn = document.getElementById('pdfDay');
+        const pdfWeekBtn = document.getElementById('pdfWeek');
+        const pdfMonthBtn = document.getElementById('pdfMonth');
+        
+        // Format date as dd/mm/yyyy
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Format date as yyyy-mm-dd for storage keys
+        function formatDateKey(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${year}-${month}-${day}`;
+        }
+        
+        // Load notes from localStorage
+        function loadNotes() {
+            const savedNotes = localStorage.getItem('dailyJournalNotes');
+            if (savedNotes) {
+                notes = JSON.parse(savedNotes);
+            }
+        }
+        
+        // Save notes to localStorage
+        function saveNotes() {
+            localStorage.setItem('dailyJournalNotes', JSON.stringify(notes));
+        }
+        
+        // Save current date to localStorage
+        function saveCurrentDate() {
+            localStorage.setItem('currentJournalDate', currentDate.toISOString());
+        }
+        
+        // Load current date from localStorage or use default
+        function loadCurrentDate() {
+            const savedDate = localStorage.getItem('currentJournalDate');
+            if (savedDate) {
+                currentDate = new Date(savedDate);
+                calendarMonth = new Date(currentDate);
+            }
+        }
+        
+        // Update the displayed date
+        function updateDateDisplay() {
+            currentDateElement.textContent = formatDate(currentDate);
+            saveCurrentDate();
+        }
+        
+        // Render notes for current date
+        function renderNotes() {
+            const dateKey = formatDateKey(currentDate);
+            const dayNotes = notes[dateKey] || [];
+            
+            // Clear container
+            notesContainer.innerHTML = '';
+            
+            if (dayNotes.length === 0) {
+                emptyState.style.display = 'block';
+                notesContainer.appendChild(emptyState);
+            } else {
+                emptyState.style.display = 'none';
+                
+                dayNotes.forEach((note, index) => {
+                    const noteElement = document.createElement('div');
+                    noteElement.className = 'note';
+                    
+                    noteElement.innerHTML = `
+                        <textarea class="note-text" placeholder="Write your lesson or gratitude here..." data-index="${index}">${note}</textarea>
+                        <button class="delete-btn" data-index="${index}" title="Delete Note">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    
+                    notesContainer.appendChild(noteElement);
+                    
+                    // Add input event listener to save changes
+                    const textarea = noteElement.querySelector('.note-text');
+                    textarea.addEventListener('input', function() {
+                        saveNoteChange(index, this.value);
+                    });
+                    
+                    // Add delete button event listener
+                    const deleteBtn = noteElement.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', function() {
+                        deleteNote(index);
+                    });
+                });
+            }
+        }
+        
+        // Add a new note
+        function addNote() {
+            const dateKey = formatDateKey(currentDate);
+            
+            if (!notes[dateKey]) {
+                notes[dateKey] = [];
+            }
+            
+            notes[dateKey].push('');
+            saveNotes();
+            renderNotes();
+            
+            // Focus on the new note
+            const textareas = document.querySelectorAll('.note-text');
+            if (textareas.length > 0) {
+                textareas[textareas.length - 1].focus();
+            }
+        }
+        
+        // Save note change
+        function saveNoteChange(index, text) {
+            const dateKey = formatDateKey(currentDate);
+            
+            if (notes[dateKey] && notes[dateKey][index] !== undefined) {
+                notes[dateKey][index] = text;
+                saveNotes();
+            }
+        }
+        
+        // Delete a note
+        function deleteNote(index) {
+            if (confirm('Do you want to delete this lesson?')) {
+                const dateKey = formatDateKey(currentDate);
+                
+                if (notes[dateKey] && notes[dateKey][index] !== undefined) {
+                    notes[dateKey].splice(index, 1);
+                    
+                    // If no notes left, remove the date key
+                    if (notes[dateKey].length === 0) {
+                        delete notes[dateKey];
+                    }
+                    
+                    saveNotes();
+                    renderNotes();
+                }
+            }
+        }
+        
+        // Change to previous day
+        function goToPreviousDay() {
+            currentDate.setDate(currentDate.getDate() - 1);
+            calendarMonth = new Date(currentDate);
+            updateDateDisplay();
+            renderNotes();
+            renderCalendar();
+        }
+        
+        // Change to next day
+        function goToNextDay() {
+            currentDate.setDate(currentDate.getDate() + 1);
+            calendarMonth = new Date(currentDate);
+            updateDateDisplay();
+            renderNotes();
+            renderCalendar();
+        }
+        
+        // Go to specific date
+        function goToDate(date) {
+            currentDate = new Date(date);
+            calendarMonth = new Date(currentDate);
+            updateDateDisplay();
+            renderNotes();
+            renderCalendar();
+            calendarPicker.classList.add('hidden');
+        }
+        
+        // Render calendar
+        function renderCalendar() {
+            const year = calendarMonth.getFullYear();
+            const month = calendarMonth.getMonth();
+            
+            // Update month display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            currentMonthElement.textContent = `${monthNames[month]} ${year}`;
+            
+            // Clear calendar
+            calendarDays.innerHTML = '';
+            
+            // Add day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.style.fontWeight = 'bold';
+                dayElement.textContent = day;
+                calendarDays.appendChild(dayElement);
+            });
+            
+            // Get first day of month and total days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Add empty cells for days before first day of month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                calendarDays.appendChild(emptyCell);
+            }
+            
+            // Add days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                
+                const cellDate = new Date(year, month, day);
+                
+                // Highlight current date
+                if (formatDateKey(cellDate) === formatDateKey(currentDate)) {
+                    dayElement.classList.add('selected');
+                }
+                
+                // Highlight dates with notes
+                if (notes[formatDateKey(cellDate)]) {
+                    dayElement.style.backgroundColor = '#333';
+                }
+                
+                dayElement.addEventListener('click', () => {
+                    goToDate(cellDate);
+                });
+                
+                calendarDays.appendChild(dayElement);
+            }
+        }
+        
+        // Generate PDF for current day
+        function generateDayPDF() {
+            const dateKey = formatDateKey(currentDate);
+            const dayNotes = notes[dateKey] || [];
+            
+            const doc = new jsPDF();
+            
+            // Add header with date
+            doc.setFontSize(12);
+            doc.text(`Date: ${formatDate(currentDate)}`, 14, 15);
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text('Lessons Learnt Today / Gratitude Words', 14, 30);
+            
+            doc.setFontSize(12);
+            let yPos = 45;
+            
+            if (dayNotes.length === 0) {
+                doc.text('No notes for this day.', 14, yPos);
+            } else {
+                dayNotes.forEach((note, index) => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    const lines = doc.splitTextToSize(`${index + 1}. ${note}`, 180);
+                    doc.text(lines, 14, yPos);
+                    yPos += (lines.length * 7) + 5;
+                });
+            }
+            
+            doc.save(`Daily_Journal_${formatDate(currentDate).replace(/\//g, '-')}.pdf`);
+        }
+        
+        // Generate PDF for current week (Sunday to Saturday)
+        function generateWeekPDF() {
+            const doc = new jsPDF();
+            
+            // Find Sunday of current week
+            const sunday = new Date(currentDate);
+            sunday.setDate(currentDate.getDate() - currentDate.getDay());
+            
+            // Add header
+            doc.setFontSize(12);
+            doc.text(`Week: ${formatDate(sunday)} to ${formatDate(new Date(sunday.getTime() + 6 * 24 * 60 * 60 * 1000))}`, 14, 15);
+            
+            doc.setFontSize(16);
+            doc.text('Weekly Lessons & Gratitude Journal', 14, 30);
+            
+            let yPos = 45;
+            
+            // Loop through each day of the week
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(sunday.getTime() + i * 24 * 60 * 60 * 1000);
+                const dateKey = formatDateKey(dayDate);
+                const dayNotes = notes[dateKey] || [];
+                
+                if (dayNotes.length > 0) {
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    // Add day header
+                    doc.setFontSize(14);
+                    doc.text(formatDate(dayDate), 14, yPos);
+                    yPos += 10;
+                    
+                    // Add notes for the day
+                    doc.setFontSize(12);
+                    dayNotes.forEach((note, index) => {
+                        const lines = doc.splitTextToSize(`${index + 1}. ${note}`, 180);
+                        doc.text(lines, 20, yPos);
+                        yPos += (lines.length * 7) + 5;
+                    });
+                    
+                    yPos += 5;
+                }
+            }
+            
+            if (yPos === 45) {
+                doc.text('No notes for this week.', 14, yPos);
+            }
+            
+            doc.save(`Weekly_Journal_${formatDate(currentDate).replace(/\//g, '-')}.pdf`);
+        }
+        
+        // Generate PDF for current month
+        function generateMonthPDF() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const doc = new jsPDF();
+            
+            // Add header
+            doc.setFontSize(16);
+            doc.text(`${monthNames[month]} ${year} - Lessons & Gratitude Journal`, 14, 15);
+            
+            let yPos = 30;
+            let hasNotes = false;
+            
+            // Loop through all days with notes in the month
+            for (let day = 1; day <= 31; day++) {
+                const dayDate = new Date(year, month, day);
+                
+                // Check if date is valid (e.g., not Feb 30)
+                if (dayDate.getMonth() !== month) break;
+                
+                const dateKey = formatDateKey(dayDate);
+                const dayNotes = notes[dateKey] || [];
+                
+                if (dayNotes.length > 0) {
+                    hasNotes = true;
+                    
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    // Add day header
+                    doc.setFontSize(14);
+                    doc.text(formatDate(dayDate), 14, yPos);
+                    yPos += 10;
+                    
+                    // Add notes for the day
+                    doc.setFontSize(12);
+                    dayNotes.forEach((note, index) => {
+                        const lines = doc.splitTextToSize(`${index + 1}. ${note}`, 180);
+                        doc.text(lines, 20, yPos);
+                        yPos += (lines.length * 7) + 5;
+                    });
+                    
+                    yPos += 5;
+                }
+            }
+            
+            if (!hasNotes) {
+                doc.text('No notes for this month.', 14, yPos);
+            }
+            
+            doc.save(`Monthly_Journal_${monthNames[month]}_${year}.pdf`);
+        }
+        
+        // Initialize the application
+        function init() {
+            loadNotes();
+            loadCurrentDate();
+            updateDateDisplay();
+            renderNotes();
+            renderCalendar();
+            
+            // Event listeners
+            addNoteBtn.addEventListener('click', addNote);
+            prevBtn.addEventListener('click', goToPreviousDay);
+            nextBtn.addEventListener('click', goToNextDay);
+            
+            calendarToggle.addEventListener('click', () => {
+                calendarPicker.classList.toggle('hidden');
+            });
+            
+            prevMonthBtn.addEventListener('click', () => {
+                calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            nextMonthBtn.addEventListener('click', () => {
+                calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+                renderCalendar();
+            });
+            
+            pdfDayBtn.addEventListener('click', generateDayPDF);
+            pdfWeekBtn.addEventListener('click', generateWeekPDF);
+            pdfMonthBtn.addEventListener('click', generateMonthPDF);
+            
+            // Close calendar when clicking outside
+            document.addEventListener('click', (event) => {
+                if (!calendarPicker.contains(event.target) && 
+                    !calendarToggle.contains(event.target) && 
+                    !calendarPicker.classList.contains('hidden')) {
+                    calendarPicker.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
